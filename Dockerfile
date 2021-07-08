@@ -24,8 +24,8 @@ RUN set -ex \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         mopidy \
-        mopidy-soundcloud \
-        mopidy-spotify \
+       # mopidy-soundcloud \
+       # mopidy-spotify \
     # Clean-up
  && apt-get purge --auto-remove -y \
         gcc \
@@ -55,20 +55,21 @@ ENV HOME=/var/lib/mopidy
 RUN set -ex \
  && usermod -G audio,sudo mopidy \
  && chown mopidy:audio -R $HOME /entrypoint.sh \
- && chmod go+rwx -R $HOME /entrypoint.sh
+ && chmod go+rwx -R /entrypoint.sh
 
 # Runs as mopidy user by default.
 USER mopidy
 
-# Basic check,
-RUN /usr/bin/dumb-init /entrypoint.sh /usr/bin/mopidy --version
+# Basic check and set directory permissions to allow running as any user after creating the .cache dir
+RUN /usr/bin/dumb-init /entrypoint.sh /usr/local/bin/mopidy --version \
+ && chmod go+rwx -R $HOME
 
 VOLUME ["/var/lib/mopidy/local", "/var/lib/mopidy/media"]
 
 EXPOSE 6600 6680 5555/udp
 
 ENTRYPOINT ["/usr/bin/dumb-init", "/entrypoint.sh"]
-CMD ["/usr/bin/mopidy"]
+CMD ["/usr/local/bin/mopidy"]
 
 HEALTHCHECK --interval=5s --timeout=2s --retries=20 \
     CMD curl --connect-timeout 5 --silent --show-error --fail http://localhost:6680/ || exit 1
