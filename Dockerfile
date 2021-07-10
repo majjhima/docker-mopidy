@@ -8,8 +8,11 @@ RUN set -ex \
         curl \
         dumb-init \
         gnupg \
-        gstreamer1.0-alsa \
+        gstreamer1.0-libav \
+        gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-tools \
         python3-crypto \
         python3-distutils \
  && curl -L https://bootstrap.pypa.io/get-pip.py | python3 - \
@@ -24,8 +27,9 @@ RUN set -ex \
  && apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         mopidy \
-       # mopidy-soundcloud \
-       # mopidy-spotify \
+        mopidy-internetarchive \
+        mopidy-soundcloud \
+        mopidy-spotify \
     # Clean-up
  && apt-get purge --auto-remove -y \
         gcc \
@@ -35,6 +39,7 @@ RUN set -ex \
 COPY Pipfile Pipfile.lock /
 
 RUN set -ex \
+ #&& pipenv lock \
  && pipenv install --system --deploy
 
 RUN set -ex \
@@ -61,7 +66,7 @@ RUN set -ex \
 USER mopidy
 
 # Basic check and set directory permissions to allow running as any user after creating the .cache dir
-RUN /usr/bin/dumb-init /entrypoint.sh /usr/local/bin/mopidy --version \
+RUN /usr/bin/dumb-init /entrypoint.sh /usr/bin/mopidy --version \
  && chmod go+rwx -R $HOME
 
 VOLUME ["/var/lib/mopidy/local", "/var/lib/mopidy/media"]
@@ -69,7 +74,7 @@ VOLUME ["/var/lib/mopidy/local", "/var/lib/mopidy/media"]
 EXPOSE 6600 6680 5555/udp
 
 ENTRYPOINT ["/usr/bin/dumb-init", "/entrypoint.sh"]
-CMD ["/usr/local/bin/mopidy"]
+CMD ["/usr/bin/mopidy"]
 
 HEALTHCHECK --interval=5s --timeout=2s --retries=20 \
     CMD curl --connect-timeout 5 --silent --show-error --fail http://localhost:6680/ || exit 1
